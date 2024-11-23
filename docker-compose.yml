@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/
+    depends_on:
+      - mongodb
+    networks:
+      - chat-network
+
+  client:
+    build:
+      context: ./chat
+    ports:
+      - "3001:3000" 
+    networks:
+      - chat-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - chat-network
+    volumes:
+      - mongo-data:/data/db
+
+networks:
+  chat-network:
+
+volumes:
+  mongo-data:
