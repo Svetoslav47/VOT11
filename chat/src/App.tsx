@@ -7,15 +7,13 @@ interface HistoryMessage {
 }
 
 const App: React.FC = () => {
- 
-  const [connection, setConnection] = useState<string>('');
   const [messages, setMessages] = useState<string[]>([]);
   const [input, setInput] = useState<string>('');
   const [room, setRoom] = useState<string>('');
 
   useEffect(() => {
     socket.on('connect', () => {
-      setConnection(socket.id);
+      console.log('Connected to server');
     });
 
     socket.on('receive-message', (message: string) => {
@@ -31,31 +29,36 @@ const App: React.FC = () => {
 
   const handleSend = () => {
     if (input.trim()) {
-      setMessages((prevMessages) => [...prevMessages, input]);
+      setMessages((prevMessages) => [...prevMessages, `You: ${input}`]);
       socket.emit('send-message', input, room);
       setInput('');
     }
   };
 
+  useEffect(() => {
+    socket.emit('join-room', 'global', (joinMessage: string, history: HistoryMessage[]) => {
+      setMessages(history.map((msg) => `${msg.sender}: ${msg.message}`));
+
+      setMessages((prevMessages) => [...prevMessages, joinMessage]);
+    });
+  }, []);
 
   const handleJoinRoom = () => {
-    if (room.trim()) {
-      socket.emit('join-room', room, (joinMessage: string, history: HistoryMessage[]) => {
-        setMessages(history.map((msg) => `${msg.sender}: ${msg.message}`));
+    socket.emit('join-room', room ? room : 'global', (joinMessage: string, history: HistoryMessage[]) => {
+      setMessages(history.map((msg) => `${msg.sender}: ${msg.message}`));
 
-        setMessages((prevMessages) => [...prevMessages, joinMessage]);
-      });
-    }
+      setMessages((prevMessages) => [...prevMessages, joinMessage]);
+    });
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg">
+    <div className="flex items-center justify-center h-screen w-screen bg-gray-100 p-4">
+      <div className="flex flex-col w-full max-w-xl h-full bg-white rounded-lg shadow-lg">
         <div className="px-4 py-2 bg-gray-200 text-gray-600 text-sm rounded-t-lg">
-          You have connected with id: <span className="font-semibold">{connection}</span>
+          You are currently chatting in room: "<span className="font-semibold">{room ? room : 'global'}</span>"
         </div>
 
-        <div className="h-64 p-4 overflow-y-auto border-b border-gray-300">
+        <div className="flex-1 p-4 overflow-y-auto border-b border-gray-300">
           {messages.map((message, index) => (
             <div key={index} className="mb-2 text-gray-700">
               {message}
@@ -63,7 +66,7 @@ const App: React.FC = () => {
           ))}
         </div>
 
-        <div className="flex items-center p-4 space-x-2">
+        <div className="flex items-center p-4 space-x-2 border-b border-gray-300">
           <input
             type="text"
             value={input}
@@ -79,7 +82,7 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        <div className="p-4 border-t border-gray-300">
+        <div className="p-4">
           <input
             type="text"
             value={room}

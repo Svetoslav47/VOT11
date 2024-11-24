@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+dotenv.config();
 
 const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+console.log(mongoURI);
 
 mongoose.connect(mongoURI, {
     useNewUrlParser: true,
@@ -48,7 +51,7 @@ io.on("connection", socket => {
         await newMessage.save();
 
         if (room === '') {
-            socket.broadcast.emit('receive-message', message);
+            socket.broadcast.emit('receive-message', `${socket.id}: ${message}`);
             console.log(message);
         } else {
             socket.to(room).emit('receive-message', message);
